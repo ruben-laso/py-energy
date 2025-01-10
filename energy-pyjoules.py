@@ -25,6 +25,31 @@ def run_command(command):
     os.system(command)
 
 
+def to_joules(df):
+    uJ_to_J = 1e-6
+    mJ_to_J = 1e-3
+
+    # Remove the "total_energy" column if it exists
+    if "total_energy" in df.columns:
+        df = df.drop(columns=["total_energy"])
+
+    DICT_COLUMN_TO_SCALE = {
+        "package": uJ_to_J,
+        "dram": uJ_to_J,
+        "core": uJ_to_J,
+        "uncore": uJ_to_J,
+        "nvidia": mJ_to_J,
+    }
+
+    # Scale the columns
+    for col in df.columns:
+        for col_to_scale in DICT_COLUMN_TO_SCALE:
+            if col_to_scale in col:
+                df[col] = df[col] * DICT_COLUMN_TO_SCALE[col_to_scale]
+
+    return df
+
+
 def parse_options():
 
     # Get command to run from args
@@ -38,6 +63,8 @@ def parse_options():
     args.add_argument("-f", "--file", help="Output file")
     args.add_argument("-v", "--verbose", help="Verbose mode",
                       action="store_true")
+    args.add_argument("-j", "--joules", help="Report energy in Joules instead of raw values (which can be uJ, mJ, ...)",
+                      action="store_true")
     # Rest of the arguments are the command to run
     args.add_argument("command", nargs=argparse.REMAINDER)
 
@@ -45,6 +72,7 @@ def parse_options():
 
     Global.verbose = args.verbose
     Global.csv = args.csv
+    Global.joules = args.joules
     if args.file:
         Global.file = args.file
 
@@ -59,9 +87,8 @@ def main():
 
     df = energy_handler.get_dataframe()
 
-    # Calculate total energy: add columns after "duration" column
-    duration_col = df.columns.get_loc("duration")
-    df["total_energy"] = df.iloc[:, duration_col+1:].sum(axis=1)
+    if Global.joules:
+        df = to_joules(df)
 
     # Report output
     if Global.csv:
