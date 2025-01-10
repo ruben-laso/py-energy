@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
 import pandas as pd
-from pyJoules.handler.pandas_handler import PandasHandler
 
 import sys
 import os
 import argparse
-import yaml
 import time
 import threading
 
@@ -19,10 +17,6 @@ class Global:
     csv = False
     verbose = False
     sudo = False
-
-
-# Get handlers
-energy_handler = PandasHandler()
 
 
 def run_command(command):
